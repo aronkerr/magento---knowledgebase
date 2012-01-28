@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Datadrivendesign_Knowledgebase>
+            <active>true</active>
+            <codePool>local</codePool>
+        </Datadrivendesign_Knowledgebase>
+    </modules>
+</config> 

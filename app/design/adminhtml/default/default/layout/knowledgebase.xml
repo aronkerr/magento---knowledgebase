@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<layout version="0.1.0">
+    <knowledgebase_adminhtml_knowledgebase_index>
+        <reference name="content">
+            <block type="knowledgebase/adminhtml_knowledgebase" name="knowledgebase" />
+        </reference>
+    </knowledgebase_adminhtml_knowledgebase_index>
+</layout>

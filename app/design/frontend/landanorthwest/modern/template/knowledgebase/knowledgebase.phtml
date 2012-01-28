@@ -1,0 +1,222 @@
+<div class="block block-knowledgebase">
+	<div class="block-title">
+    	<strong>
+        	<span>Knowledgebase</span>
+        </strong>
+    </div>
+    <div class="block-content">
+    	<div class="form-search">
+       		<form id="knowledgebaseSearch">
+                <input type="search" id="docSearch" class="input-text" value="" />
+                <!--
+                <select id="searchLimit">
+                	<option value="all">All</option>
+                    <optgroup label="User Documents">
+                   		<option value="br">Brochures</option>
+                    	<option value="um">User Manuals</option>
+                        <option value="ms">MSDS</option>
+                        <option value="wr">Waranties</option>
+                    </optgroup>
+                    <optgroup label="Service Documents">
+                		<option value="bd">Breakdowns</option>
+                        <option value="sm">Service Manuals</option>
+                    </optgroup>
+                </select>
+                -->
+          		<!--
+                <span id="dateRangeSlider">
+                     <input />
+                     <input />
+                 </span>
+                 -->
+                <button type="submit" class="button">Search</button>
+            </form>
+        </div>
+        <blockquote class="bubble top"><p>Start typing the model number or name of the product you are looking for information on. Keep typing to refine your search further.</p></blockquote> 
+        <div id="mainContent" class="container">
+        	<!--
+            <blockquote class="bubble top" id="knowledgebaseContact">                
+                <p><strong>Not finding what your looking for?</strong></p>
+                <p>If you can't find the information you are looking for contact us and we will help you out.</p>
+			</blockquote>
+            -->
+        </div>
+        <div id="window"></div>
+    </div>
+</div>
+<script>	
+	// Create scribd iframe
+	function getScribd(doc_id, access_key) {		
+		// load scribd doc information
+		 var scribd_doc = scribd.Document.getDoc( doc_id , access_key, search_query );
+		 
+		 scribd_doc.addParam( 'jsapi_version', 2 );		
+		 scribd_doc.addParam( 'height', 748 );
+		 scribd_doc.addParam( 'search_query', search_query );	
+		 
+		 //scribd_doc.addEventListener( 'docReady', onDocReady );
+		 // write scribd doc to modal window
+		 scribd_doc.write( 'window' );
+	}
+	
+	( function($) {
+		$(document).ready(function(){
+								
+			var type;
+			request = null;
+			ajaxForm = $( '#knowledgebaseSearch' );
+			doc_id = "<?php if(isset($_GET['doc_id'])) echo $_GET['doc_id']; ?>";
+			access_key = "<?php if(isset($_GET['access_key'])) echo $_GET['access_key']; ?>";
+			article_title = "";
+			search_query = "";
+			page_number = 0;
+			
+			var onDocReady = function(e){
+				alert('ready');
+				scribd_doc.api.setFullscreen( true );
+			}
+			
+			// BOF Bind click functions to articles
+			var bindBehaviors = function() {
+				$("article").click(function(event){
+					 event.preventDefault();
+					 // Get scribd doc information
+					 doc_id = $(this).attr('data-doc_id');
+					 access_key = $(this).attr('data-access_key');
+					 article_title = $(this).attr('data-article_title');				 
+					 window.open(); 
+				});
+			}		
+			bindBehaviors();
+			// EOF Bind click functions to articles
+			// BOF Window functions
+			// Create window for scribd document
+			var window = $("#window").kendoWindow({
+				 visible: false,
+				 draggable: false,
+				 modal: true,
+				 width: "1100px",
+				 height: "750px",
+				 actions: ["Email", "Maximize", "Close"],
+				 activate: onActivate
+			}).data("kendoWindow");	
+			
+			function onActivate(e) {
+				window.title(article_title);
+				window.center();		
+				
+				// Create scribd iframe
+				getScribd(doc_id, access_key, search_query);
+			};
+			// EOF Window functions
+			// BOF Handle text being typed into search bar
+			$("#docSearch").keyup(function(){
+				page_number = 0;
+				ajaxForm.submit();
+			});
+			// EOF Handle text being typed into search bar
+			// BOF Handle form search button being clicked
+			ajaxForm.submit(function(event){	
+				event.preventDefault();
+				search_query = $("#docSearch").val();
+				type = $("#searchLimit").val();
+				if(search_query.length > 0){
+					delay(function(){
+						checkRequest(search_query);
+					}, 200 );
+				}
+			});
+			// EOF Handle form search button being clicked		
+			// BOF Create AJAX request
+			var sendRequest = function(search_query){
+				// Build ajax request
+				request = $.ajax({
+					 type: 'POST',
+					 cache: false,
+					 url: '<?php echo $this->getUrl('knowledgebase/index/search') ?>',
+					 data: {
+						 q : search_query,
+						 //t : type,
+						 //p : page_number
+					 },
+					 dataType: 'json'
+				});			
+				// After ajax request finishes
+				request.done(function(data) {
+					buildContent(data);
+					bindBehaviors();
+				});
+			}
+			// EOF Create AJAX request
+			// BOF Check if an AJAX request already exists. If it does abort it and send an new request. If it doesn't send a new request.
+			var checkRequest = function(search_query){
+				if(request != null){
+					request.abort();
+				}			
+				sendRequest(search_query);
+			}
+			// EOF Check if an AJAX request already exists.
+			// BOF Date Range Slider
+				/*$("#dateRangeSlider").kendoRangeSlider({
+					min: 1980,
+					max: (new Date).getFullYear(),
+					//orientation: "horizontal",
+					smallStep: 1,
+					largeStep:10
+				});*/
+			// EOF Date Range Slider
+			// BOF Build the main content area. Creates articles and links using JSON data returned by AJAX request		
+			var buildContent = function(data){
+				var article = '';
+				var i = 1;
+				$.each(data, function(key, item){
+					if(typeof item.title != 'undefined'){
+						article += '<article data-doc_id="'+ item.doc_id +'" data-access_key="' + item.access_key + '" data-article_title="' + item.title + '">';
+						article += '<img src="' + item.thumbnail_url +'" alt="" width="110px" height="150px"/>';
+						article += '<div class="documentInfo">';
+						article += '<h4>' + item.title + '</h4>';
+						article += '<ul>';
+						article += '<li><label>Manufacturer:</label><span><strong>' + item.brand + '</strong></span></li>'; 
+						article += '<li><label>Document Type:</label><span><strong>' + item.type + '</strong></span></li>'; 
+						article += '<li><label>Published:</label><span><strong>' + item.published + '</strong></span></li>';
+						article += '</ul>';
+						article += '</div>';
+						article += '</article>';
+						i++;
+					}
+				});
+				$("#mainContent").html(article);
+				
+				$("article:last").attr('class', 'last');
+			}
+			// EOF Build the main content area. Creates articles and links using JSON data returned by AJAX request	
+			// BOF Check for post variables and open referenced article if they do.
+			// If doc_id and access_key defined load document in window
+			if( doc_id != '' && access_key != '' ){
+				window.open();
+			}; 
+			// EOF Check for post variables and open referenced article if they do.
+			// BOF Hide bubble
+			$("#docSearch").focus(function(){
+				$(".bubble").fadeOut('slow');
+			});
+			// EOF Hide bubble
+			// BOF Handle email button being clicked
+			$(".k-email").click(function(event){
+				event.preventDefault();
+				var docLink = "http://www.landanorthwest.com/knowledgebase?doc_id=" + doc_id + "&access_key=" + access_key;
+				alert(docLink);
+			});
+			// EOF Handle email button being clicked		
+			// BOF Delay timer. Used to send requests only after user has stopped typing
+			var delay = (function(){
+				var timer = 0;
+				return function(callback, ms){
+					clearTimeout (timer);
+					timer = setTimeout(callback, ms);
+				};
+			})();
+			// EOF Delay timer.
+		 });
+	} ) ( jQuery );
+</script>
