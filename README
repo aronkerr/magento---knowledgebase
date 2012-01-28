@@ -1,1 +1,13 @@
-Hello world!
+/**
+ * Knowledgebase is a Magento module that adds tools to manage documents via the Scribd API
+ *
+ * PHP version 5
+ *
+ * @category   Datadrivendesign
+ * @package    Knowledgebase
+ * @author     Aron Kerr <aronkerr@gmail.com>
+ * @copyright  2012 Data Driven Design
+ * @license    http://opensource.org/licenses/osl-3.0.php  OSL License 3.0
+ * @version    0.1.0
+ * @link       https://github.com/aronkerr/magento---knowledgebase
+ */
